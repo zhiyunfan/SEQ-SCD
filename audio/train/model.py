@@ -544,7 +544,7 @@ class Model(Module):
             change_p = torch.tensor(change_p, dtype=torch.float32, device=device)
             # FIXME: fix support for return_intermediate
             with torch.no_grad():
-                cif_output, output, not_padding_after_cif, sum_a, weight_keep, fired_flag, speaker_embedding, loss_cfg, prob, change_p, _, _ = self(tX, change_p=change_p, mask=None, return_intermediate=return_intermediate)
+                cif_output, output, not_padding_after_cif, sum_a, weight_keep, fired_flag, speaker_embedding, loss_cfg, prob, change_p, _ = self(tX, change_p=change_p, mask=None, return_intermediate=return_intermediate)
             #print(fired_flag.size())
             #tfX = torch.cat([fired_flag[:,:,-1].unsqueeze(-1), weight_keep], -1)
             tfX = torch.cat([fired_flag[:,:,-1].unsqueeze(-1), fired_flag[:,:,-1].unsqueeze(-1)], -1)

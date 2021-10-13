@@ -26,4 +26,4 @@
 # AUTHORS
 # Hervé BREDIN - http://herve.niderb.fr
 
-from .models import PyanNet, SincTDNN, ACRoPoLiS, PyanNet2, PyanNet3
+from .models import SEQSCD

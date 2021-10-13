@@ -279,12 +279,7 @@ import multiprocessing
 
 import torch
 from .base import apply_pretrained
-from .speech_detection import SpeechActivityDetection
 from .change_detection import SpeakerChangeDetection
-from .overlap_detection import OverlapDetection
-from .speaker_embedding import SpeakerEmbedding
-from .domain_classification import DomainClassification
-
 import pdb
 
 def load_dict(f):
@@ -302,20 +297,7 @@ def main():
 
     params = {}
 
-    if arg["sad"]:
-        Application = SpeechActivityDetection
-
-    elif arg["scd"]:
-        Application = SpeakerChangeDetection
-
-    elif arg["ovl"]:
-        Application = OverlapDetection
-
-    elif arg["emb"]:
-        Application = SpeakerEmbedding
-
-    elif arg["dom"]:
-        Application = DomainClassification
+    Application = SpeakerChangeDetection
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     if arg["--gpu"] and device == "cpu":

@@ -3,3 +3,6 @@ SEQ-SCD is a code for our paper "SEQUENCE-LEVEL SPEAKER CHANGE DETECTION WITH CO
 
 # Installation
 pip install -r requirements.txt
+
+# Get Started
+This tutorial assumes that you have already followed the data preparation tutorial to prepare AMI corpus. 

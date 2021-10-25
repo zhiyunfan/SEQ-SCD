@@ -10,6 +10,8 @@ This tutorial assumes that you have already followed the data preparation tutori
 # Configuration
 To ensure reproducibility, SEQ-SCD relies on a configuration file defining the experimental setup:
 
+```yaml
+
 \# A sequence-level speaker change detection model is trained. 
 \# Here, training relies on 4s-long audio chunks,
 \# batches of 128 audio chunks, and saves model to
@@ -93,6 +95,6 @@ scheduler:
      warmup_steps: 100
      hold_steps: 13000
      decay_steps: 13000
-
+```
 # Acknowledge
 The SEQ-SCD borrows a lot of codes from pyannote-audio, pyannote-metric, pyannote-core and pyannote-pipeline.

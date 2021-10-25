@@ -12,10 +12,10 @@ To ensure reproducibility, SEQ-SCD relies on a configuration file defining the e
 
 ```yaml
 
-\# A sequence-level speaker change detection model is trained. 
-\# Here, training relies on 4s-long audio chunks,
-\# batches of 128 audio chunks, and saves model to
-\# disk every one (1) day worth of audio.
+# A sequence-level speaker change detection model is trained. 
+# Here, training relies on 4s-long audio chunks,
+# batches of 128 audio chunks, and saves model to
+# disk every one (1) day worth of audio.
 task:
    name: SpeakerChangeDetection
    params:
@@ -25,10 +25,10 @@ task:
       collar: 0.0
       non_speech: True
 
-\# Data augmentation is applied during training.
-\# Here, it consists in additive noise from the
-\# MUSAN database, with random signal-to-noise
-\# ratio between 5 and 20 dB
+# Data augmentation is applied during training.
+# Here, it consists in additive noise from the
+# MUSAN database, with random signal-to-noise
+# ratio between 5 and 20 dB
 data_augmentation:
    name: AddNoise
    params:
@@ -36,9 +36,9 @@ data_augmentation:
       snr_max: 20
       collection: MUSAN.Collection.BackgroundNoise
 
-\# Since we are training an end-to-end model, the
-\# feature extraction step simply returns the raw
-\# waveform.
+# Since we are training an end-to-end model, the
+# feature extraction step simply returns the raw
+# waveform.
 feature_extraction:
    name: LibrosaMFCC
    params:

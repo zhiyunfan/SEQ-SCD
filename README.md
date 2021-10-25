@@ -5,7 +5,7 @@ SEQ-SCD is a code for our paper "SEQUENCE-LEVEL SPEAKER CHANGE DETECTION WITH CO
 pip install -r requirements.txt
 
 # Get Started
-This tutorial assumes that you have already followed the [data preparation](../../data_preparation) tutorial to prepare [AMI](http://groups.inf.ed.ac.uk/ami/corpus) corpus. 
+This tutorial assumes that you have already followed the [data preparation](https://github.com/pyannote/pyannote-audio/tree/master/tutorials/data_preparation) tutorial to prepare [AMI](http://groups.inf.ed.ac.uk/ami/corpus) corpus. 
 
 # Configuration
 To ensure reproducibility, SEQ-SCD relies on a configuration file defining the experimental setup:

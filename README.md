@@ -86,7 +86,8 @@ architecture:
          plot_speaker: True
          spk_loss_type: 'focal_bce'
          num_spk_class: 136
-         speaker_embedding_path: '/opt/tiger/fanzhiyun/code/SEQ-SCD-book/view/speaker_embedding.txt'
+         speaker_embedding_path: '/path/to/speaker_embedding/save/file'
+         
 scheduler:
   name: TriStageScheduler
   params:

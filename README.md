@@ -93,3 +93,6 @@ scheduler:
      warmup_steps: 100
      hold_steps: 13000
      decay_steps: 13000
+
+# Acknowledge
+The SEQ-SCD borrows a lot of codes from pyannote-audio, pyannote-metric, pyannote-core and pyannote-pipeline.

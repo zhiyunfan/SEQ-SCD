@@ -9,7 +9,8 @@ This tutorial assumes that you have already followed the data preparation tutori
 
 # Configuration
 To ensure reproducibility, SEQ-SCD relies on a configuration file defining the experimental setup:
-\# A sequence-level speaker change detection model is trained.
+
+\# A sequence-level speaker change detection model is trained. 
 \# Here, training relies on 4s-long audio chunks,
 \# batches of 128 audio chunks, and saves model to
 \# disk every one (1) day worth of audio.

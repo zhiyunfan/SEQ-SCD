@@ -1,6 +1,6 @@
 # A speaker change detection model is trained.
-# Here, training relies on 2s-long audio chunks,
-# batches of 64 audio chunks, and saves model to
+# Here, training relies on 4s-long audio chunks,
+# batches of 128 audio chunks, and saves model to
 # disk every one (1) day worth of audio.
 task:
    name: SpeakerChangeDetection
@@ -30,10 +30,6 @@ feature_extraction:
    params:
       sample_rate: 16000
 
-# We use the PyanNet architecture in Figure 2 of
-# pyannote.audio introductory paper. More details
-# about the architecture and its parameters can be
-# found directly in PyanNet docstring.
 architecture:
    name: pyannote.audio.models.SEQSCD
    params:

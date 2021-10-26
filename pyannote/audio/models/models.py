@@ -489,7 +489,6 @@ class SEQSCD(Model):
 
     def init(
         self,
-        decoder: Optional[dict] = None,
         sincnet: Optional[dict] = None,
         rnn: Optional[dict] = None,
         cif: Optional[dict] = None,
@@ -514,7 +513,6 @@ class SEQSCD(Model):
         self.sincnet = sincnet
         self.loss_cfg = loss_cfg
         self.down_rate = loss_cfg["down_rate"]
-        self.decoder = decoder
         self.rnn = rnn
         self.training = training
         self.normalize_scalar = cif["normalize_scalar"]

@@ -90,9 +90,9 @@ scheduler:
   params:
      learning_rate: 0.0001
      peak_lr: 0.0001
-     warmup_steps: 100
-     hold_steps: 13000
-     decay_steps: 13000
+     warmup_steps: 4200
+     hold_steps: 42000
+     decay_steps: 19000
 ```
 # Acknowledge
 The SEQ-SCD borrows a lot of codes from pyannote-audio, pyannote-metric, pyannote-core and pyannote-pipeline.

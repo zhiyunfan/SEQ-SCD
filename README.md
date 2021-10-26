@@ -47,9 +47,6 @@ feature_extraction:
 architecture:
    name: pyannote.audio.models.SEQSCD
    params:
-      decoder:
-         struction: 'fc'
-         tdnn_context: 1
       sincnet:
          skip: True
          out_channels: [80, 60, 60, 60, 60,60]

@@ -359,6 +359,11 @@ class LabelingTaskGenerator(BatchGenerator):
                 mask = current_file[self.mask]
                 current_file[self.mask] = mask.align(y)
 
+            for key, classes in self.file_labels_.items():
+                key_index = key + '_index'
+                self.data_[uri]['current_file'][key_index] = classes.index(self.data_[uri]['current_file'][key])
+
+
         return sum(datum["duration"] for datum in self.data_.values())
 
     @property
@@ -427,7 +432,8 @@ class LabelingTaskGenerator(BatchGenerator):
                 sample["mask"] = mask
 
             for key, classes in self.file_labels_.items():
-                sample[key] = classes.index(current_file[key])
+                #sample[key] = classes.index(current_file[key])
+                sample[key] = current_file[key+'_index']
           
             yield sample
 

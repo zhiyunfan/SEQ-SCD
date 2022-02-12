@@ -1,6 +1,6 @@
 # A speaker change detection model is trained.
-# Here, training relies on 4s-long audio chunks,
-# batches of 128 audio chunks, and saves model to
+# Here, training relies on 2s-long audio chunks,
+# batches of 64 audio chunks, and saves model to
 # disk every one (1) day worth of audio.
 task:
    name: SpeakerChangeDetection
@@ -30,9 +30,16 @@ feature_extraction:
    params:
       sample_rate: 16000
 
+# We use the PyanNet architecture in Figure 2 of
+# pyannote.audio introductory paper. More details
+# about the architecture and its parameters can be
+# found directly in PyanNet docstring.
 architecture:
    name: pyannote.audio.models.SEQSCD
    params:
+      decoder:
+         struction: 'fc'
+         tdnn_context: 1
       sincnet:
          skip: True
          out_channels: [80, 60, 60, 60, 60,60]
@@ -55,6 +62,13 @@ architecture:
          using_kaiming_init: True
          nonlinear_act: 'relu'
          normalize_scalar: 12.0
+      codebook:
+         is_used: True
+         code_len: 100
+         code_size: 512
+         attention_size: 512
+         num_attention_heads: 8
+         attention_dropout: 0.1
       loss_cfg:
          count_weight: 1.0
          spk_loss_weight: 50.0
@@ -62,12 +76,12 @@ architecture:
          plot_speaker: False
          spk_loss_type: 'focal_bce'
          num_spk_class: 136
-         speaker_embedding_path: '/your/path/to/save/speaker_embedding'
+         speaker_embedding_path: '/opt/tiger/fanzhiyun/code/pyannote-audio/view/speaker_embedding.txt'
 scheduler:
   name: TriStageScheduler
   params:
      learning_rate: 0.0001
      peak_lr: 0.0001
-     warmup_steps: 4200
-     hold_steps: 42000
-     decay_steps: 19000
+     warmup_steps: 100
+     hold_steps: 13000
+     decay_steps: 13000

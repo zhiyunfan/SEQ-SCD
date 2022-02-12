@@ -5,34 +5,9 @@ train_spk_path=./data/spk_info/train_spk
 dev_spk_path=./data/spk_info/dev_spk_
 test_spk_path=./data/spk_info/test_spk_
 
-gpu=0
-stage=1
-down_rate=8
-
-while [[ $# -gt 0 ]]
-do
-    case $1 in
-    --gpu)
-        shift
-        gpu=$1
-        shift
-        ;;
-    --stage)
-        shift
-        stage=$1
-        shift
-        ;;
-    --down_rate)
-        shift
-        down_rate=$1
-        shift
-        ;;
-    *)
-        remained_args="${remained_args} $1"
-        shift
-        ;;
-    esac
-done &&
+gpu=$1
+stage=$2
+down_rate=$3
 
 EXP_DIR=./exp/speaker_change_detection
 
@@ -44,7 +19,7 @@ export TRN_DIR=${EXP_DIR}/train/AMI.SpeakerDiarization.MixHeadset.train
 
 #train
 start_eps=1
-end_eps=500
+end_eps=160
 dev_every_eps=10
 if [ $stage -le 1 ];then
     echo 'start to training'

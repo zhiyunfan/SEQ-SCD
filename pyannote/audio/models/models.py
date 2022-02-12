@@ -50,7 +50,8 @@ import logging
 import math
 import numpy as np
 import time
-
+from pyannote.audio.models.multihead_attention import MultiheadAttention 
+from torch.nn.parameter import Parameter
 
 class Encoder(nn.Module):
     """Recurrent layers
@@ -489,9 +490,11 @@ class SEQSCD(Model):
 
     def init(
         self,
+        decoder: Optional[dict] = None,
         sincnet: Optional[dict] = None,
         rnn: Optional[dict] = None,
         cif: Optional[dict] = None,
+        codebook: Optional[dict] = None,
         loss_cfg: Optional[dict] = None,
         training: bool = True,
     ):
@@ -513,7 +516,9 @@ class SEQSCD(Model):
         self.sincnet = sincnet
         self.loss_cfg = loss_cfg
         self.down_rate = loss_cfg["down_rate"]
+        self.decoder = decoder
         self.rnn = rnn
+        self.codebook = codebook
         self.training = training
         self.normalize_scalar = cif["normalize_scalar"]
         n_features = self.n_features
@@ -550,6 +555,17 @@ class SEQSCD(Model):
         self.activation_ = torch.nn.Sigmoid()
         self.linear_ = nn.Linear(self.rnn['hidden_size'], num_class, bias=True)
 
+        # spk code
+        if self.codebook["is_used"] == True:
+            self.spkcode = Parameter(torch.Tensor(codebook["code_len"], codebook["code_size"]))
+            nn.init.kaiming_uniform_(self.spkcode, a=math.sqrt(5))
+
+            self.self_attn = MultiheadAttention(
+                self.codebook["attention_size"],
+                self.codebook["num_attention_heads"],
+                dropout=self.codebook["attention_dropout"],
+            )
+
     def forward(self, waveforms, mask=None):
         """Forward pass
 
@@ -577,6 +593,18 @@ class SEQSCD(Model):
         weight_keep = weight_keep.unsqueeze(-1)
         cif_output = output
 
+        # spk codebook
+        batch_size = output.size(0)
+        if self.codebook["is_used"]:
+            spk_code = self.spkcode.unsqueeze(0).repeat(batch_size, 1, 1)
+            output, _ = self.self_attn(
+                query=output.transpose(0,1),
+                key=spk_code.transpose(0,1),
+                value=spk_code.transpose(0,1),
+                need_weights=False,
+                attn_mask=None,
+                )
+            output = output.transpose(0,1)
         # Decoder
         # hidden FC layer 
         output = self.dec_linear(output)

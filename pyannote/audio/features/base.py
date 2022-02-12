@@ -39,7 +39,7 @@ from pyannote.database import get_unique_identifier
 
 from librosa.util import valid_audio
 from librosa.util.exceptions import ParameterError
-
+import pdb
 class FeatureExtraction:
     """Base class for feature extraction
 
@@ -149,15 +149,26 @@ class FeatureExtraction:
 
         # compute features
         features = self.get_features(y.data, sample_rate, current_file)
+        if type(features) != type(()):
+            # basic quality check
+            if np.any(np.isnan(features)):
+                uri = get_unique_identifier(current_file)
+                msg = f'Features extracted from "{uri}" contain NaNs.'
+                warnings.warn(msg.format(uri=uri))
 
-        # basic quality check
-        if np.any(np.isnan(features)):
-            uri = get_unique_identifier(current_file)
-            msg = f'Features extracted from "{uri}" contain NaNs.'
-            warnings.warn(msg.format(uri=uri))
+            # wrap features in a `SlidingWindowFeature` instance
+            return SlidingWindowFeature(features, self.sliding_window)
+        else:
+            # basic quality check
+            seg_score = features[1]
+            features = features[0]
+            if np.any(np.isnan(features)):
+                uri = get_unique_identifier(current_file)
+                msg = f'Features extracted from "{uri}" contain NaNs.'
+                warnings.warn(msg.format(uri=uri))
 
-        # wrap features in a `SlidingWindowFeature` instance
-        return SlidingWindowFeature(features, self.sliding_window)
+            # wrap features in a `SlidingWindowFeature` instance
+            return SlidingWindowFeature(features, self.sliding_window), seg_score
 
     def get_context_duration(self) -> float:
         """

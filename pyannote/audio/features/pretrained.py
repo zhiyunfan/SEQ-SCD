@@ -229,7 +229,7 @@ class Pretrained(FeatureExtraction):
             self.feature_extraction_.sliding_window,
         )
         #if 'y' in current_file.keys():
-        return self.model_.slide(
+        score, seg_score = self.model_.slide(
             features,
             current_file['y'],
             self.chunks_,
@@ -239,7 +239,8 @@ class Pretrained(FeatureExtraction):
             progress_hook=self.progress_hook,
             down_rate=self.down_rate,
             writer=self.writer,
-        ).data
+        ) 
+        return score.data, seg_score
         # else:
         #     return self.model_.slide(
         #         features,

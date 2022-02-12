@@ -45,7 +45,7 @@ from pyannote.core import *
 from pyannote.core.notebook import notebook
 import matplotlib.pyplot as plt
 import os
-
+import pdb
 def validate_helper_func(current_file, oracle_vad, plot_flag, pipeline=None, metric=None):
     save_dir = '/opt/tiger/fanzhiyun/code/pyannote-audio/view'
     reference = current_file["annotation"]
@@ -77,6 +77,52 @@ def validate_helper_func(current_file, oracle_vad, plot_flag, pipeline=None, met
             plt.savefig(save_dir + '/' + str(start) + '_' + str(end) + '.eps', format='eps')
 
     return metric(reference, hypothesis, oracle_vad, uem=uem)
+
+
+def vos(current_file, theta_vad, theta_overdet, spk_list):
+    save_dir = '/opt/tiger/fanzhiyun/code/SEQ-SCD-book/view'
+    reference = current_file["annotation"]
+    seg_score = current_file["seg_score"]
+    uri = current_file["uri"]
+    save_dir = save_dir + '/' + uri
+    hyp = Annotation()
+    for item in seg_score:
+        seg = item[0]
+        score = item[1]
+        score_sorted = copy.copy(score)
+        score_sorted.sort()
+        max_score = score_sorted[-1]
+        second_score = score_sorted[-2]
+        if max_score < theta_vad:
+            continue
+        else:
+            if second_score > theta_overdet:
+                hyp[seg] = 'over'
+            else:
+                spk_index = score.argmax()
+                hyp[seg] = spk_list[spk_index]
+
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    hyp = hyp.support(0.1)
+
+    dur = 40
+    total_dur = int(current_file['duration'])
+    num_fig = total_dur // dur
+    for i in range(num_fig):
+        start = i*dur
+        end = start + dur
+        plt.figure()
+        notebook.crop = Segment(start, end) 
+        plt.subplot(311)
+        notebook.plot_annotation(reference)
+        plt.subplot(313)
+        notebook.plot_annotation(hyp)
+
+        plt.savefig(save_dir + '/' + str(start) + '_' + str(end) + '.eps', format='eps')
+
+
 
 class SpeakerChangeDetection(BaseLabeling):
 
@@ -227,17 +273,33 @@ class SpeakerChangeDetection(BaseLabeling):
         for current_file in validation_data:
             resolution = pretrained.get_resolution()
             current_file["y"] = self.initialize_y(current_file, resolution, down_rate, collar, spk_list)
-            scores_ = pretrained(current_file)
+            scores_, seg_score = pretrained(current_file)
             scores = copy.deepcopy(scores_)
             if down_rate != 1:
                 scores.sliding_window._SlidingWindow__duration = scores.sliding_window._SlidingWindow__duration + (down_rate - 1) * scores.sliding_window._SlidingWindow__step
                 scores.sliding_window._SlidingWindow__step = scores.sliding_window._SlidingWindow__step * down_rate
 
             current_file["scores"] = scores
+            current_file["seg_score"] = seg_score
+
 
         # pipeline
         pipeline = self.Pipeline(scores="@scores", fscore=True, diarization=diarization)
 
+        def compare_timeline(hyp, ref):
+            ref_gap = ref.gaps()
+            hyp_gap = hyp.gaps()
+
+            hyp_ref_union = hyp | ref
+            hyp_ref_gap_union = hyp | ref_gap
+            hyp_gap_ref_union = hyp_gap | ref
+            #pdb.set_trace()
+            hit = hyp.duration() + ref.duration() - hyp_ref_union.duration()
+            false = hyp.duration() + ref_gap.duration() - hyp_ref_gap_union.duration()
+            miss = hyp_gap.duration() + ref.duration() - hyp_gap_ref_union.duration()
+
+            return hit, false, miss
+            
         def fun(threshold):
             
             pipeline.instantiate({"alpha": threshold, "min_duration": 0.100})
@@ -250,6 +312,101 @@ class SpeakerChangeDetection(BaseLabeling):
                     _ = validate(file, oracle_vad, self.plot_flag)
 
             return 1.0 - abs(metric)
+
+        #### adjust the vad threshold
+        def fun_vad(threshold):
+            #print('ssss', threshold)
+            total_hit = 0
+            total_false = 0
+            total_miss = 0
+            for current_file in validation_data:
+                #pdb.set_trace()
+                reference = current_file["annotation"]
+                seg_score = current_file["seg_score"]
+                T = current_file["annotated"][0].end
+                #pdb.set_trace()
+                speech = [Segment(0, 0.001)]
+
+                for item in seg_score:
+                    seg = item[0]
+                    score = item[1]
+                    max_score = max(score)
+                    if max_score > threshold:
+                        speech.append(seg)
+
+                speech.append(Segment(T-0.001, T))
+                speech = Timeline(speech).support()
+
+                ref = reference.get_timeline()
+                hit_speech, false_speech, miss_speech = compare_timeline(speech, ref)
+
+                total_hit = total_hit + hit_speech
+                total_false = total_false + false_speech
+                total_miss = total_miss + miss_speech
+
+            return -(total_hit - total_false - total_miss)
+
+        vad_res = scipy.optimize.minimize_scalar(
+                fun_vad, bounds=(0.0, 1.0), method="bounded", options={"maxiter": 10}
+            )
+        theta_vad = vad_res.x.item()
+        hit_speech = -vad_res.fun
+
+        ### adjust the overlap detection threshold
+        def fun_overdet(threshold):
+            total_hit = 0
+            total_false = 0
+            total_miss = 0 
+            for current_file in validation_data:
+                reference = current_file["annotation"]
+                seg_score = current_file["seg_score"]
+                T = current_file["annotated"][0].end
+                hyp = [Segment(0, 0.001)]            
+                for item in seg_score:
+                    
+                    seg = item[0]
+                    score = copy.copy(item[1])
+                    score.sort()
+                    second_score = score[-2]
+
+                    if second_score > 0.5:
+                       hyp.append(seg)
+                #pdb.set_trace()
+                hyp.append(Segment(T-0.001, T))
+                hyp = Timeline(hyp).support()
+
+                overlap = []
+                labels = reference.labels()
+                #pdb.set_trace()
+                for label_i in labels:
+                    for label_j in labels:
+                        if label_j == label_i:
+                            continue 
+                        timeline_i = reference.label_support(label_i)
+                        timeline_j = reference.label_support(label_j)
+                        for segment_i, segment_j in timeline_i.co_iter(timeline_j):
+                            segment_and = segment_i & segment_j
+                            overlap.append(segment_and)
+                #pdb.set_trace()
+                overlap = Timeline(overlap).support()
+                hit_overlap, false_overlap, miss_overlap = compare_timeline(hyp, overlap)
+                total_hit = total_hit + hit_overlap
+                total_false = total_false + false_overlap
+                total_miss = total_miss + miss_overlap
+
+            return -(total_hit - total_false - total_miss)
+
+        overlap_res = scipy.optimize.minimize_scalar(
+                fun_overdet, bounds=(0.0, 0.5), method="bounded", options={"maxiter": 10}
+            )
+
+        theta_overdet = overlap_res.x.item()
+        hit_overlap = -overlap_res.fun
+
+
+        for file in validation_data:
+            vos(file, theta_vad, 0.5, spk_list)
+
         self.plot_flag = False
         if best_threshold == None:
             res = scipy.optimize.minimize_scalar(

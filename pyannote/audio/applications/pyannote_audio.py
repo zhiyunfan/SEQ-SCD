@@ -202,7 +202,7 @@ Common options
                           be defined in the configuration file [default: 32].
 
   --step=<ratio>          Ratio of audio chunk duration used as step between
-                          two consecutive audio chunks [default: 0.2]
+                          two consecutive audio chunks [default: 1.0]
 
   --parallel=<n_jobs>     Use at most that many threads for generating training
                           samples or validating files. Defaults to using all

@@ -85,6 +85,10 @@ from .callback import Callbacks
 from .logging import Logging
 from tqdm import tqdm
 import copy
+import pdb
+from pyannote.core import Segment
+from pyannote.core import Annotation
+
 
 class Model(Module):
     """Model
@@ -528,6 +532,9 @@ class Model(Module):
         
 
         fX = []
+        activation = []
+        output_mask = []
+        max_length = 0
         for batch in batches:
             tX = torch.tensor(batch["X"], dtype=torch.float32, device=device)
 
@@ -535,22 +542,50 @@ class Model(Module):
             with torch.no_grad():
                 cif_output, output, not_padding_after_cif, sum_a, fired_flag, loss_cfg = self(tX, mask=None)
 
+            if output.size(1) > max_length:
+                max_length = output.size(1)
+
             tfX = torch.cat([fired_flag[:,:,-1].unsqueeze(-1), fired_flag[:,:,-1].unsqueeze(-1)], -1)
 
             if loss_cfg["plot_speaker"] == True:
                 self.plot_speaker(cif_output, not_padding_after_cif, batch["y"], loss_cfg)
 
             tfX_npy = tfX.detach().to("cpu").numpy()
+            output_npy = output.detach().to("cpu").numpy()
+            not_padding_after_cif_npy = not_padding_after_cif.detach().to("cpu").numpy()
+           
             if postprocess is not None:
                 tfX_npy = postprocess(tfX_npy)
 
             fX.append(tfX_npy)
+            activation.append(output_npy)
+            output_mask.append(not_padding_after_cif_npy)
 
             if progress_hook is not None:
                 n_done += len(batch["X"])
                 progress_hook(n_done, n_chunks)
 
+        #pdb.set_trace()
+        def align_lenght(tensors, l):
+            ret = []
+            #pdb.set_trace()
+            for it in tensors:
+                if it.shape[1] < l:
+                    pad_len = l - it.shape[1]
+                    if len(it.shape) == 3:
+                        pad = np.zeros([it.shape[0], pad_len, it.shape[2]]) 
+                    else:
+                        pad = np.zeros([it.shape[0], pad_len])
+                    ret.append(np.concatenate((it,pad),axis=1))
+                else:
+                    ret.append(it)
+            return ret
+
         fX = np.vstack(fX)
+        activation = align_lenght(activation, max_length)
+        output_mask = align_lenght(output_mask, max_length)
+        activation = np.vstack(activation)
+        output_mask = np.vstack(output_mask)
 
         # get total number of frames (based on last window end time)
         resolution_ = copy.copy(resolution)
@@ -565,7 +600,10 @@ class Model(Module):
         # k[i] is the number of chunks that overlap with frame #i
         k = np.zeros((n_frames, 1), dtype=np.int8)
 
-        for chunk, fX_ in zip(chunks, fX):
+        seg_score = []
+
+        for chunk, fX_, activation_, output_mask_ in zip(chunks, fX, activation, output_mask):
+            #pdb.set_trace()
             # indices of frames overlapped by chunk
             indices = resolution_.crop(chunk, mode=self.alignment, fixed=fixed)
 
@@ -575,6 +613,24 @@ class Model(Module):
             # keep track of the number of overlapping sequence
             # TODO - use smarter weights (e.g. Hamming window)
             k[indices] += 1
+
+            ################
+            Segments = []
+            activation_ = activation_[output_mask_ == 1]
+            fX_[-1,0] = 1
+            fired_index = np.argwhere(fX_[:,0]==1).tolist()
+            assert len(fired_index) == activation_.shape[0] or len(fired_index) == activation_.shape[0] - 1 
+            # if len(fired_index) != activation_.shape[0]: 
+            #     pdb.set_trace()
+            shift = chunk.start
+            start = 0
+            for i in range(len(fired_index)):
+                #pdb.set_trace()
+                end = fired_index[i][0] * 0.08
+                seg_score.append((Segment(start + shift, end + shift), activation_[i]))
+                start = end
+
+
         # compute average embedding of each frame
         data = data / np.maximum(k, 1)
 
@@ -595,7 +651,8 @@ class Model(Module):
             return None
 
         process(data)
-        return SlidingWindowFeature(data, resolution_)
+
+        return SlidingWindowFeature(data, resolution_), seg_score
 
     def compute_acc(self, prob, label, mask=None):
         batch_size = label.size(0)

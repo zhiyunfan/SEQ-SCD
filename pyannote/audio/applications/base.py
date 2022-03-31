@@ -57,7 +57,7 @@ from pyannote.core.utils.helper import get_class_by_name
 import warnings
 from pyannote.audio.train.task import Task
 
-from pyannote.audio.features import Pretrained
+from pyannote.audio.features.pretrained import Pretrained
 from pyannote.audio.features import Precomputed
 from pyannote.audio.features.wrapper import Wrapper
 from pyannote.audio.applications.config import load_config

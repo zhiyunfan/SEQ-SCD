@@ -74,7 +74,7 @@ class Reverb(Augmentation):
         height: Tuple[float, float] = (2.0, 5.0),
         absorption: Tuple[float, float] = (0.2, 0.9),
         noise: Optional[NoiseCollection] = None,
-        snr: Tuple[float, float] = (5.0, 15.0),
+        snr: Tuple[float, float] = (5.0, 20.0),
     ):
 
         super().__init__()

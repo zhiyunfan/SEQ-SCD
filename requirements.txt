@@ -8,3 +8,12 @@ tqdm >= 4.29.1
 tensorboard >= 2.0.0
 typing_extensions >= 3.7.4;python_version < '3.8'
 pyroomacoustics
+docopt
+torch >=1.9
+pandas
+simplejson
+pescador
+optuna
+filelock
+matplotlib
+pyannote.database >=4.1.1,<5.0
